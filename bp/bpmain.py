@@ -133,7 +133,7 @@ def mainfunc(opt: DictConfig) -> None:
         for wd_index in range(len(param_list["weight_decay"])):
             with read_write(opt):
                 opt.training.learning_rate = param_list["learning_rate"][lr_index]
-                opt.training.learning_rate = param_list["weight_decay"][wd_index]
+                opt.training.weight_decay = param_list["weight_decay"][wd_index]
 
             model = nn.Sequential(
                 nn.Conv2d(1, 32, 3, 1),

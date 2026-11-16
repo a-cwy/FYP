@@ -158,7 +158,7 @@ def mainfunc(opt: DictConfig) -> None:
         for wd_index in range(len(param_list["weight_decay"])):
             with read_write(opt):
                 opt.training.learning_rate = param_list["learning_rate"][lr_index]
-                opt.training.learning_rate = param_list["weight_decay"][wd_index]
+                opt.training.weight_decay = param_list["weight_decay"][wd_index]
 
             cnn = CNN()
             blocks = nn.ModuleList([DenoiserBlock(label_dim = opt.model.label_dim, hidden_size = 320).to("cuda") for _ in range(opt.model.T)])
