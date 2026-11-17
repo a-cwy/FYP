@@ -50,7 +50,7 @@ def train(opt, model, optimizer):
             if val_result["classification_loss"] <= val_loss_best[0]:
                 val_loss_best = (val_result["classification_loss"], epoch)
 
-                save_dir = "./ff/models/MNIST/final"
+                save_dir = "./ff/models/CIFAR10/final3"
                 torch.save(model.state_dict(), f"{save_dir}/forwardforward-checkpoint-epoch-{val_loss_best[1]}")
 
 
@@ -135,7 +135,7 @@ def mainfunc(opt: DictConfig) -> None:
             tracemalloc.stop()
 
             #Saving model
-            SAVE_ROOT = "./ff/models/MNIST"
+            SAVE_ROOT = "./ff/models/CIFAR10"
             save_dir = f"{SAVE_ROOT}/forwardforward-{time.time()}"
             os.makedirs(save_dir, exist_ok = True)
             torch.save(model.state_dict(), f"{save_dir}/forwardforward-frozen-valloss-{val_loss_best[0]}-epoch-{val_loss_best[1]}")

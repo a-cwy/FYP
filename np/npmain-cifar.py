@@ -80,7 +80,7 @@ def train(opt, train_loader, val_loader, cnn, blocks, optimizers):
             val_loss_best[0] = val_loss_acc["accuracy"]
             val_loss_best[1] = epoch
 
-            save_dir = "./np/models/CIFAR10/final"
+            save_dir = "./np/models/CIFAR10/final3"
             os.makedirs(f"{save_dir}/epoch-{val_loss_best[1]}", exist_ok = True)
             for index, block in enumerate(blocks):
                 torch.save(block.state_dict(), f"{save_dir}/epoch-{val_loss_best[1]}/np-checkpoint-block-{index}")

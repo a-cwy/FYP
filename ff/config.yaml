@@ -1,4 +1,4 @@
-seed: 42
+seed: 634
 device: "cuda"
 
 input:
@@ -9,7 +9,7 @@ model:
   peer_normalization: 0.03 #Peer normalization loss coefficient
   momentum: 0.9 #Momentum for running mean in peer normalization loss
 
-  hidden_dim: 800 #Size of hidden layer
+  hidden_dim: 500 #Size of hidden layer
   num_layers: 3
 
 

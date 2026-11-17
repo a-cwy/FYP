@@ -63,7 +63,7 @@ def train(opt, train_loader, val_loader, model, optimizer):
             val_loss_best[0] = val_loss_acc["accuracy"]
             val_loss_best[1] = epoch
 
-            save_dir = "./bp/models/MNIST/final"
+            save_dir = "./bp/models/MNIST/final3"
             torch.save(model.state_dict(), f"{save_dir}/bp-checkpoint-epoch-{val_loss_best[1]}")
 
         #Early stopper

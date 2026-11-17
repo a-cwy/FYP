@@ -79,15 +79,15 @@ class FFMNIST(torch.utils.data.Dataset):
     #Collect partition
     def get_MNIST_partition(self, opt, partition):
         if partition in ["train", "val", "train_val"]:
-            mnist = torchvision.datasets.MNIST(
-                "./data/MNIST/",
+            mnist = torchvision.datasets.CIFAR10(
+                "./data/CIFAR10/",
                 train=True,
                 download=True,
                 transform=torchvision.transforms.ToTensor(),
             )
         elif partition in ["test"]:
-            mnist = torchvision.datasets.MNIST(
-                "./data/MNIST/",
+            mnist = torchvision.datasets.CIFAR10(
+                "./data/CIFAR10/",
                 train=False,
                 download=True,
                 transform=torchvision.transforms.ToTensor(),
@@ -98,8 +98,8 @@ class FFMNIST(torch.utils.data.Dataset):
         if partition == "train":
             mnist = torch.utils.data.Subset(mnist, range(40000))
         elif partition == "val":
-            mnist = torchvision.datasets.MNIST(
-                "./data/MNIST/",
+            mnist = torchvision.datasets.CIFAR10(
+                "./data/CIFAR10/",
                 train=True,
                 download=True,
                 transform=torchvision.transforms.ToTensor(),
