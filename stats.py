@@ -6,7 +6,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 
 def mainfunc():
-    models = ["bp", "ff", "np"]
+    models = ["bp", "ff", "np", "np-prl"]
     eval_sets = ["MNIST", "CIFAR10"]
 
     stats = {
@@ -123,6 +123,44 @@ def mainfunc():
                     "std": 0.0
                 }   
             }
+        },
+        "np-prl": {
+            "MNIST": {
+                "acc": {
+                    "mean": 0.0,
+                    "std": 0.0
+                },
+                "f1": {
+                    "mean": 0.0,
+                    "std": 0.0
+                },
+                "precision": {
+                    "mean": 0.0,
+                    "std": 0.0
+                },
+                "recall": {
+                    "mean": 0.0,
+                    "std": 0.0
+                }
+            },
+            "CIFAR10": {
+                "acc": {
+                    "mean": 0.0,
+                    "std": 0.0
+                },
+                "f1": {
+                    "mean": 0.0,
+                    "std": 0.0
+                },
+                "precision": {
+                    "mean": 0.0,
+                    "std": 0.0
+                },
+                "recall": {
+                    "mean": 0.0,
+                    "std": 0.0
+                }   
+            }
         }
     }
 
@@ -178,8 +216,6 @@ def mainfunc():
 
     with open("./evals/stats.json", "w", encoding = "utf-8") as f:
         f.write(json.dumps(stats, ensure_ascii = False, indent = 4))
-
-            
 
 
 

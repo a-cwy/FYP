@@ -8,9 +8,9 @@ from sklearn.metrics import ConfusionMatrixDisplay, confusion_matrix
 
 #Main
 def mainfunc():
-    models = ["bp", "ff", "np"]
+    models = ["bp", "ff", "np", "np-prl"]
     eval_sets = ["MNIST", "CIFAR10"]
-    modelnames = ["Backpropagation", "Forward-Forward", "NoProp"]
+    modelnames = ["Backpropagation", "Forward-Forward", "NoProp", "NoProp"]
 
     for index, model in enumerate(models):
         for eval_set in eval_sets:

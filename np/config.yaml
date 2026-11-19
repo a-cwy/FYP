@@ -1,4 +1,4 @@
-seed: 18465
+seed: 345
 device: "cuda"
 
 input:
