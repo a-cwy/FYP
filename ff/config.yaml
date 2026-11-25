@@ -1,20 +1,20 @@
-seed: 634
+seed: 3
 device: "cuda"
 
 input:
-  batch_size: 100
+  batch_size: 16
 
 
 model:
   peer_normalization: 0.03 #Peer normalization loss coefficient
   momentum: 0.9 #Momentum for running mean in peer normalization loss
 
-  hidden_dim: 500 #Size of hidden layer
-  num_layers: 3
+  hidden_dim: 64 #Size of hidden layer
+  num_layers: 2
 
 
 training:
-  epochs: 100
+  epochs: 1
   early_stop_threshold: 100
 
   learning_rate: 1e-3

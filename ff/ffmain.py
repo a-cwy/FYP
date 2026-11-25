@@ -12,18 +12,20 @@ import utils
 
 
 #Trains model
-def train(opt, model, optimizer):
+def train(opt, model, optimizer, start_time):
     #Log start time for tracking
-    start_time = time.time()
+    epoch_start_time = time.time()
     train_loader = utils.get_data(opt, "train")
     num_steps_per_epoch = len(train_loader)
     best_model = model
     val_loss_best = [5.0, 0]
     loss_acc_history = {"loss": [], "accuracy": []}
 
-    for epoch in range(opt.training.epochs):
+    epoch = 0
+    while(time.time() - start_time <= 600):
+    # for epoch in range(opt.training.epochs):
         train_results = defaultdict(float)
-        optimizer = utils.update_learning_rate(optimizer, opt, epoch)
+        # optimizer = utils.update_learning_rate(optimizer, opt, epoch)
 
         for inputs, labels in train_loader:
             inputs, labels = utils.preprocess_inputs(opt, inputs, labels)
@@ -37,8 +39,8 @@ def train(opt, model, optimizer):
 
             train_results = utils.log_results(train_results, scalar_outputs, num_steps_per_epoch)
 
-        utils.print_results("train", time.time() - start_time, train_results, epoch)
-        start_time = time.time()
+        utils.print_results("train", time.time() - epoch_start_time, train_results, epoch)
+        epoch_start_time = time.time()
 
         #Epoch validation
         if epoch % opt.training.val_index == 0 and opt.training.val_index != -1:
@@ -50,13 +52,12 @@ def train(opt, model, optimizer):
             if val_result["classification_loss"] <= val_loss_best[0]:
                 val_loss_best = (val_result["classification_loss"], epoch)
 
-                save_dir = "./ff/models/CIFAR10/final3"
-                torch.save(model.state_dict(), f"{save_dir}/forwardforward-checkpoint-epoch-{val_loss_best[1]}")
 
+        # #Early stopper
+        # if epoch > val_loss_best[1] + opt.training.early_stop_threshold:
+        #     break
 
-        #Early stopper
-        if epoch > val_loss_best[1] + opt.training.early_stop_threshold:
-            break
+        epoch += 1
 
     return best_model, val_loss_best, loss_acc_history
 
@@ -94,6 +95,10 @@ def validate_test(opt, model, partition, epoch = None):
 def mainfunc(opt: DictConfig) -> None:
     opt = utils.parse_args(opt)
 
+    #Resource use logging
+    start_time = time.time()
+    tracemalloc.start()
+
     param_list = {
         "learning_rate": [0.0005],
         "weight_decay": [0.0005]
@@ -113,19 +118,11 @@ def mainfunc(opt: DictConfig) -> None:
 
             print("Total trainable parameters: ", sum(p.numel() for p in model.parameters()))
 
-            #Resource use logging
-            start_time = time.time()
-            tracemalloc.start()
-
-
-
-            model, val_loss_best, loss_acc_history = train(opt, model, optimizer)
+            model, val_loss_best, loss_acc_history = train(opt, model, optimizer, start_time)
             validate_test(opt, model, "val")
 
             if opt.training.final_test:
                 validate_test(opt, model, "test")
-
-
 
             #End resource use logging and display
             memuse_b = tracemalloc.get_traced_memory()[1]
@@ -153,6 +150,7 @@ def mainfunc(opt: DictConfig) -> None:
             with open(f"{save_dir}/training_history.json", "w", encoding = 'utf-8') as f:
                 f.write(json.dumps(training_info, ensure_ascii = False, indent = 4))
 
+    print(torch.cuda.memory_summary(device = "cuda"))
 
 if __name__ == "__main__":
     mainfunc()

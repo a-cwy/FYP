@@ -10,7 +10,7 @@ import ffnet
 
 #MNIST dataloader for FF
 class FFMNIST(torch.utils.data.Dataset):
-    def __init__(self, opt, partition, num_classes=10):
+    def __init__(self, opt, partition, num_classes = 10):
         self.opt = opt
         self.mnist = self.get_MNIST_partition(opt, partition)
         self.num_classes = num_classes
@@ -39,7 +39,8 @@ class FFMNIST(torch.utils.data.Dataset):
             torch.tensor(class_label), num_classes=self.num_classes
         )
         pos_sample = sample.clone()
-        pos_sample[:, 0, : self.num_classes] = one_hot_label
+        # pos_sample[:, 0, : self.num_classes] = one_hot_label
+        pos_sample.ravel()[:self.num_classes] = one_hot_label
         return pos_sample
 
 
@@ -53,14 +54,16 @@ class FFMNIST(torch.utils.data.Dataset):
             torch.tensor(wrong_class_label), num_classes=self.num_classes
         )
         neg_sample = sample.clone()
-        neg_sample[:, 0, : self.num_classes] = one_hot_label
+        # neg_sample[:, 0, : self.num_classes] = one_hot_label
+        neg_sample.ravel()[:self.num_classes] = one_hot_label
         return neg_sample
 
 
 
     #Generate neutral sample (all labels uniform)
     def _get_neutral_sample(self, z):
-        z[:, 0, : self.num_classes] = self.uniform_label
+        # z[:, 0, : self.num_classes] = self.uniform_label
+        z.ravel()[:self.num_classes] = self.uniform_label
         return z
 
 

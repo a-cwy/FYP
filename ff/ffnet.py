@@ -27,7 +27,7 @@ class FFnet(torch.nn.Module):
 
         #Initialize model
         self.num_channels = [self.opt.model.hidden_dim] * self.opt.model.num_layers
-        self.model = nn.ModuleList([nn.Linear(width, self.num_channels[0])]) #MNIST 784, CIFAR10 3072
+        self.model = nn.ModuleList([nn.Linear(3072, self.num_channels[0])]) #MNIST 784, CIFAR 3072
         for i in range(1, self.opt.model.num_layers):
             self.model.append(nn.Linear(self.num_channels[i - 1], self.num_channels[i]))
 

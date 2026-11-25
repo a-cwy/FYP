@@ -12,6 +12,7 @@ from torchvision import datasets, transforms
 import ffnet
 import ffevalutil
 import npevalutil
+from npdt import npnet
 
 
 
@@ -161,43 +162,43 @@ def mainfunc(opt: DictConfig) -> None:
 
         pass
     elif model == "np-prl":
-            path = f"./np-prl/models/{eval_set}/final"
+        path = f"./np-prl/models/{eval_set}/final"
+        
+        #Test loop
+        for i in range(1, 4):
+            loaded_model = None
+            if eval_set == "MNIST":
+                loaded_cnn = npevalutil.CNNmnist()
+            elif eval_set == "CIFAR10":
+                loaded_cnn = npevalutil.CNNcifar()
+
+            loaded_cnn.load_state_dict(state_dict = torch.load(f"{path}{i}/np-best/np-checkpoint-cnn", weights_only = True))
+            loaded_cnn.eval()
+            loaded_blocks = nn.ModuleList([npevalutil.DenoiserBlock(label_dim = 10) for _ in range(10)])
+            for index, block in enumerate(loaded_blocks):
+                block.load_state_dict(state_dict = torch.load(f"{path}{i}/np-best/np-checkpoint-block-{index}", weights_only = True))
+                block.eval()
             
-            #Test loop
-            for i in range(1, 4):
-                loaded_model = None
-                if eval_set == "MNIST":
-                    loaded_cnn = npevalutil.CNNmnist()
-                elif eval_set == "CIFAR10":
-                    loaded_cnn = npevalutil.CNNcifar()
-    
-                loaded_cnn.load_state_dict(state_dict = torch.load(f"{path}{i}/np-best/np-checkpoint-cnn", weights_only = True))
-                loaded_cnn.eval()
-                loaded_blocks = nn.ModuleList([npevalutil.DenoiserBlock(label_dim = 10) for _ in range(10)])
-                for index, block in enumerate(loaded_blocks):
-                    block.load_state_dict(state_dict = torch.load(f"{path}{i}/np-best/np-checkpoint-block-{index}", weights_only = True))
-                    block.eval()
-                
-                with torch.no_grad():
-                    alpha = torch.linspace(1.0, 0.1, 10)
-    
-                    for x, y in test_loader:
-                        z_t = torch.randn(1, 10)
-                        
-                        x_features = loaded_cnn(x) 
-                        for t in reversed(range(10)):
-                            u_hat = loaded_blocks[t](x_features, z_t)
-                            z_t = torch.sqrt(alpha[t]) * u_hat + torch.sqrt(1 - alpha[t]) * torch.randn_like(u_hat)
-                        
-                        softmax = nn.functional.softmax(z_t)
-                        y_hat = torch.argmax(softmax, dim = -1, keepdim = True).flatten()
-    
-                        results[f"run{i}"]["pred"].append(y_hat.item())
-                        results[f"run{i}"]["true"].append(y.item())
+            with torch.no_grad():
+                alpha = torch.linspace(1.0, 0.1, 10)
+
+                for x, y in test_loader:
+                    z_t = torch.randn(1, 10)
+                    
+                    x_features = loaded_cnn(x) 
+                    for t in reversed(range(10)):
+                        u_hat = loaded_blocks[t](x_features, z_t)
+                        z_t = torch.sqrt(alpha[t]) * u_hat + torch.sqrt(1 - alpha[t]) * torch.randn_like(u_hat)
+                    
+                    softmax = nn.functional.softmax(z_t)
+                    y_hat = torch.argmax(softmax, dim = -1, keepdim = True).flatten()
+
+                    results[f"run{i}"]["pred"].append(y_hat.item())
+                    results[f"run{i}"]["true"].append(y.item())
                         
     
     
-            pass
+        pass
 
 
     os.makedirs(f"./evals/{model}/{eval_set}", exist_ok = True)

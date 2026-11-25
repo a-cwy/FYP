@@ -1,11 +1,11 @@
-seed: 836
+seed: 3
 device: "cuda"
 
 input:
   batch_size: 128
 
 training:
-  epochs: 100
+  epochs: 3
   early_stop_threshold: 100
 
   learning_rate: 0.0005

@@ -16,34 +16,40 @@ from torch.utils.data import DataLoader, Subset
 
 
 #Trainer
-def train(opt, train_loader, val_loader, model, optimizer):
+def train(opt, train_loader, val_loader, model, optimizer, start_time):
     loss_acc_history = {"loss": [], "accuracy": []}
     val_loss_best = [0.0, 0]
     best_model = model
+    scaler = torch.amp.GradScaler()
 
-    for epoch in range(opt.training.epochs):
+    epoch = 0
+    while(time.time() - start_time <= 600):
+    # for epoch in range(opt.training.epochs):
         epoch_loss = 0.0
         batch_count = 0
 
         #Learning rate decay
-        lr = opt.training.learning_rate
-        if epoch > (opt.training.epochs // 2):
-            lr = opt.training.learning_rate * 2 * (1 + opt.training.epochs - epoch) / opt.training.epochs
-        optimizer.param_groups[0]["lr"] = lr
+        # lr = opt.training.learning_rate
+        # if epoch > (opt.training.epochs // 2):
+        #     lr = opt.training.learning_rate * 2 * (1 + opt.training.epochs - epoch) / opt.training.epochs
+        # optimizer.param_groups[0]["lr"] = lr
 
         for x, y in train_loader:
             current_batch_size = x.shape[0]
             
             x = x.to("cuda")
-            y_pred = model(x) 
-            y_onehot = nn.functional.one_hot(y, num_classes = 10).float()
-    
-            CELoss = nn.CrossEntropyLoss()
-            loss = CELoss(y_pred, y_onehot)
+
+            with torch.amp.autocast(device_type = 'cuda', dtype = torch.float16):
+                y_pred = model(x) 
+                y_onehot = nn.functional.one_hot(y, num_classes = 10).float()
+        
+                CELoss = nn.CrossEntropyLoss()
+                loss = CELoss(y_pred, y_onehot)
 
             optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
 
             epoch_loss += loss.item()
             batch_count += 1
@@ -63,12 +69,14 @@ def train(opt, train_loader, val_loader, model, optimizer):
             val_loss_best[0] = val_loss_acc["accuracy"]
             val_loss_best[1] = epoch
 
-            save_dir = "./bp/models/MNIST/final3"
-            torch.save(model.state_dict(), f"{save_dir}/bp-checkpoint-epoch-{val_loss_best[1]}")
+            # save_dir = "./bp/models/MNIST/final3"
+            # torch.save(model.state_dict(), f"{save_dir}/bp-checkpoint-epoch-{val_loss_best[1]}")
 
         #Early stopper
-        if epoch > val_loss_best[1] + opt.training.early_stop_threshold:
-            break
+        # if epoch > val_loss_best[1] + opt.training.early_stop_threshold:
+        #     break
+
+        epoch += 1
 
     return loss_acc_history, val_loss_best, best_model
 
@@ -84,13 +92,14 @@ def validate(opt, val_loader, model):
         current_batch_size = x.shape[0]
 
         x = x.to("cuda")
-        y_pred = model(x) 
+        with torch.amp.autocast(device_type = 'cuda', dtype = torch.float16):
+            y_pred = model(x) 
 
-        output = torch.argmax(y_pred, dim = -1, keepdim = True).flatten()
-        y_onehot = nn.functional.one_hot(y, num_classes = 10).float()
+            output = torch.argmax(y_pred, dim = -1, keepdim = True).flatten()
+            y_onehot = nn.functional.one_hot(y, num_classes = 10).float()
 
-        CELoss = nn.CrossEntropyLoss()
-        loss = CELoss(y_pred, y_onehot).item()
+            CELoss = nn.CrossEntropyLoss()
+            loss = CELoss(y_pred, y_onehot).item()
         total_loss += loss
 
         correct_predicitons += torch.sum(output == y).item()
@@ -112,6 +121,10 @@ def mainfunc(opt: DictConfig) -> None:
     np.random.seed(opt.seed)
     torch.manual_seed(opt.seed)
     random.seed(opt.seed)
+
+    #Resource use logging
+    start_time = time.time()
+    tracemalloc.start()
 
     #Dataset
     mnist = datasets.MNIST(root = "./data/MNIST/", download = True, train = True, transform = transforms.ToTensor())
@@ -136,40 +149,27 @@ def mainfunc(opt: DictConfig) -> None:
                 opt.training.weight_decay = param_list["weight_decay"][wd_index]
 
             model = nn.Sequential(
-                nn.Conv2d(1, 32, 3, 1),
+                nn.Conv2d(1, 4, 3, 1),
+                nn.BatchNorm2d(4),
                 nn.ReLU(),
-                nn.MaxPool2d(2),
-                nn.Conv2d(32, 64, 3, 1),
-                nn.ReLU(),
-                nn.MaxPool2d(2),
+                nn.MaxPool2d(4),
                 nn.Flatten(),
-                nn.Linear(1600, 1024),
+                nn.Linear(144, 64),
+                nn.BatchNorm1d(64),
                 nn.ReLU(),
-                nn.Linear(1024, 256),
-                nn.ReLU(),
-                nn.Linear(256, 128),
-                nn.ReLU(),
-                nn.Linear(128, 10),
+                nn.Linear(64, 10),
                 #MNIST: 1600
                 #CIFAR10: 2304
-            )
+            ).to("cuda")
             optimizer = optim.Adam(model.parameters(), lr = opt.training.learning_rate)
 
             total_param = sum(p.numel() for p in model.parameters() if p.requires_grad)
             print("Total trainable parameters: ", total_param)
 
-            #Resource use logging
-            start_time = time.time()
-            tracemalloc.start()
-
-
-
             #Training loop
             train_loader = DataLoader(train_data, batch_size = opt.input.batch_size, shuffle = True, generator = torch.Generator(device = "cuda"))
             val_loader = DataLoader(val_data, batch_size = opt.input.batch_size, shuffle = True, generator = torch.Generator(device = "cuda"))
-            loss_acc_history, val_loss_best, best_model = train(opt, train_loader, val_loader, model, optimizer)
-
-
+            loss_acc_history, val_loss_best, best_model = train(opt, train_loader, val_loader, model, optimizer, start_time)
 
             #End resource use logging and display
             memuse_b = tracemalloc.get_traced_memory()[1]
@@ -202,6 +202,8 @@ def mainfunc(opt: DictConfig) -> None:
             training_info["time_elapsed_seconds"] = time_seconds
             with open(f"{save_dir}/training_history.json", "w", encoding = 'utf-8') as f:
                 f.write(json.dumps(training_info, ensure_ascii = False, indent = 4))
+
+    print(torch.cuda.memory_summary(device = "cuda"))
 
 
 if __name__ == "__main__":
